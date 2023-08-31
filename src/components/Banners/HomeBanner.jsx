@@ -1,10 +1,13 @@
-import React from "react";
+import React, { useContext } from "react";
 import "./Banner.css";
 import Cookies from "js-cookie";
 import { ImGithub } from "react-icons/im";
+import MilanContext from "../../context/MilanContext";
 import Button from "../Button/GlobalButton/Button";
 
 const HomeBanner = () => {
+  const { toggleSignUpModal } = useContext(MilanContext);
+
   return (
     <>
       <div className="container">
@@ -65,7 +68,7 @@ const HomeBanner = () => {
                   <div className="banner_btn_div">
                     <Button
                       className="banner_signup_btn"
-                      action="signup"
+                      onClick={toggleSignUpModal}
                       data-cy="landingpage-club-signup"
                       id="landingpage-club-signup"
                       variant="outline"

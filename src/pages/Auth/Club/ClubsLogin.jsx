@@ -1,54 +1,86 @@
-import { useState } from "react";
-import { LoginClub, LoginUser } from "../../service/MilanApi";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { LoginClub } from "../../../service/MilanApi";
+import "../AuthPage.css";
 import { Helmet } from "react-helmet-async";
-import { ToastContainer } from "react-toastify";
-import AuthButton from "../../components/Button/AuthButton/AuthButton";
-import TopButton from "../../components/Button/AuthButton/TopButton";
+import { showErrorToast, showSuccessToast } from "../../../utils/Toasts";
 import { FiEye, FiEyeOff } from "react-icons/fi";
-import { FaChevronDown } from "react-icons/fa";
-import "./AuthPage.css";
-import { useFormLogic } from "./AuthFormmodule";
+import useValidation from "../../../hooks/useValidation";
+import { ToastContainer } from "react-toastify";
+import AuthButton from "../../../components/Button/AuthButton/AuthButton";
+import TopButton from "../../../components/Button/AuthButton/TopButton";
+import { SetAuthCookies } from "../../../utils/Cookies";
 
-const AuthLogin = () => {
-  const [userType, setUserType] = useState("individual");
+function ClubLogin() {
+  const navigate = useNavigate();
+  const [credentials, setCredentials] = useState({
+    email: "",
+    password: "",
+  });
 
-  const userTypeOptions = [
-    { value: "individual", label: "Individual" },
-    { value: "club", label: "Charity/Club/NGO" },
-  ];
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { formState, isLoading, handleChange, handleSubmit } = useFormLogic(
-    { email: "", password: "" },
-    handleLoginSubmit,
-    "/",
-  );
+  const handleChange = (e) => {
+    setCredentials({ ...credentials, [e.target.name]: e.target.value });
+  };
 
-  async function handleLoginSubmit(credentials) {
-    if (userType === "individual") {
-      const data = await LoginUser(credentials);
-      return data;
-    } else if (userType === "club") {
-      const data = await LoginClub(credentials);
-      return data;
+  const callLoginClubAPI = async () => {
+    const Data = await LoginClub(credentials);
+
+    if (Data?.status === 201) {
+      SetAuthCookies(Data);
+      showSuccessToast(Data?.data?.message);
+
+      setTimeout(() => {
+        setIsLoading(false);
+        navigate("/");
+      }, 2000);
+    } else {
+      showErrorToast(Data?.message);
+      setCredentials({ email: "", password: "" });
+
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1000);
     }
-  }
+  };
+
+  const handleSubmit = (e) => {
+    setIsLoading(true);
+    e.preventDefault();
+    const validationErrors = useValidation(credentials);
+
+    if (validationErrors.length > 0) {
+      validationErrors.forEach((error) => {
+        showErrorToast(error.message);
+      });
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1000);
+    } else {
+      callLoginClubAPI();
+    }
+  };
 
   const [passwordType, setPasswordType] = useState("password");
 
   const passwordToggle = () => {
-    setPasswordType(passwordType === "password" ? "text" : "password");
+    if (passwordType === "password") {
+      setPasswordType("text");
+    } else setPasswordType("password");
   };
 
   return (
     <>
       <Helmet>
-        <title>Milan | Login</title>
+        <title>Milan | Club Register</title>
         <meta
           name="description"
           content="Welcome to the Club's registration page. Provide all the needed credentials and join us."
         />
         <link rel="canonical" href="/" />
       </Helmet>
+
       <ToastContainer />
 
       <div className="authpage_godparent">
@@ -61,27 +93,7 @@ const AuthLogin = () => {
             <TopButton isGoBack={true} />
             <form className="authform" onSubmit={handleSubmit}>
               <h1 className=""> Sign In</h1>
-              <div className="authform_container">
-                <label htmlFor="userType" className="auth_label">
-                  User Type
-                </label>
-                <div className="user-type-dropdown">
-                  <select
-                    id="userType"
-                    name="userType"
-                    value={userType}
-                    onChange={(e) => setUserType(e.target.value)}
-                    className="form-control user-type-select"
-                  >
-                    {userTypeOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <FaChevronDown className="dropdown-icon" />
-                </div>
-              </div>
+
               <div className="authform_container mb-4">
                 <label htmlFor="email-des" className="auth_label">
                   Email address
@@ -90,17 +102,13 @@ const AuthLogin = () => {
                   type="email"
                   className=" form-control "
                   name="email"
-                  value={formState.email}
+                  value={credentials.email}
                   onChange={handleChange}
                   required
                   aria-label="Club email"
                   id="email-des"
-                  placeholder={
-                    userType === "individual"
-                      ? "john@example.com"
-                      : 'peepal@farm.io"'
-                  }
-                  data-cy="email"
+                  placeholder="peepal@farm.io"
+                  data-cy="desktop-club-email"
                 />
               </div>
 
@@ -112,12 +120,12 @@ const AuthLogin = () => {
                   type={passwordType}
                   className=" form-control "
                   name="password"
-                  value={formState.password}
+                  value={credentials.password}
                   onChange={handleChange}
                   required
                   id="password-des"
                   placeholder="Strg@Pass#122&&S"
-                  data-cy="password"
+                  data-cy="desktop-club-password"
                 />
 
                 <div
@@ -139,6 +147,6 @@ const AuthLogin = () => {
       </div>
     </>
   );
-};
+}
 
-export default AuthLogin;
+export default ClubLogin;

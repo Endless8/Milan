@@ -9,14 +9,14 @@ const TopButton = ({ GoogleButton, isGoBack }) => {
   const navigate = useNavigate();
 
   const handleGoBack = () => {
-    navigate("/");
+    navigate(-1);
   };
 
   const handleNavigatePages = () => {
     navigate(
       window.location.pathname.includes("register")
-        ? "/auth/login"
-        : "/auth/register",
+        ? "/user/login"
+        : "/user/register",
     );
   };
 
